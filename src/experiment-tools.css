@@ -1,0 +1,80 @@
+.street-header { align-items: center; }
+.street-filters, .street-camera, .street-controls, .street-timeline, .tool-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.street-filters label { display: inline-flex; gap: 7px; align-items: center; color: var(--subtle); font-size: .83rem; }
+.street-filters label > span { white-space: nowrap; }
+.street-filters select { min-width: 110px; }
+.street-frame { position: relative; height: clamp(330px, 46vw, 548px); background: radial-gradient(ellipse at 50% 44%, #30294f, #151421 74%); border-block: 1px solid var(--line); }
+#street-canvas { width: 100%; height: 100%; display: block; outline-offset: -4px; touch-action: none; }
+.street-placeholder { position: absolute; inset: 0; display: grid; text-align: center; place-items: center; padding: 30px; background: radial-gradient(ellipse at 50% 45%, #2d2745, #161521 75%); color: var(--subtle); }
+.street-overlay { position: absolute; inset: 14px 15px auto; display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.street-location { display: flex; align-items: center; gap: 8px; background: #161625eb; border: 1px solid #4b4166; padding: 8px 11px; border-radius: 8px; font-size: .82rem; }
+.street-location > span { display: block; width: 7px; height: 7px; border-radius: 50%; background: #c1adff; box-shadow: 0 0 10px #a185f4; }
+.street-camera { pointer-events: auto; }
+.street-camera .button-muted, .street-camera .icon-button { background: #1b192beb; }
+.street-camera .button-muted:hover, .street-camera .icon-button:hover { background: #342947; }
+.street-controls { padding: 10px 16px; }
+.street-timeline { flex: 1; font-size: .84rem; color: var(--subtle); }
+.street-timeline > span, .street-timeline output { white-space: nowrap; }
+.street-timeline output { color: var(--text); min-width: 114px; }
+.street-timeline input[type="range"] { flex: 1; padding-inline: 0; accent-color: var(--primary); appearance: auto; background: transparent; border: 0; min-width: 45px; }
+.street-info { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+.street-info select { max-width: 155px; }
+.street-detail { padding: 0 19px 16px; color: var(--subtle); font-size: .86rem; }
+.street-detail > strong { color: var(--text); display: block; }
+.street-detail ul { padding: 0; margin: 10px 0 0; list-style: none; display: grid; gap: 6px; }
+.street-detail time { font: .77rem var(--mono); color: var(--accent); margin-right: 6px; }
+.street-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.street-counts div { background: #201d32; border: 1px solid #35304b; border-radius: 8px; padding: 8px; }
+.street-counts strong { color: var(--text); display: block; font-size: clamp(1rem, 2vw, 1.27rem); }
+.street-counts span { color: var(--subtle); font-size: .78rem; }
+.street-note { padding: 0 19px 14px; color: var(--subtle); font-size: .83rem; }
+
+.tool-form { padding: 0 19px 16px; display: grid; gap: 12px; }
+.tool-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.tool-form label { color: var(--subtle); font-size: .86rem; }
+.tool-form label:not(.button) { display: grid; gap: 5px; }
+.tool-form label.button { color: var(--text); }
+.tool-form textarea { display: block; }
+.tool-form fieldset { margin-top: 0; display: grid; gap: 8px; }
+.offer-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tool-actions { flex-wrap: wrap; gap: 8px; }
+.tool-form > label.button { justify-self: start; }
+.tool-form:has(input[type="file"]:focus-visible) label.button[for] { outline: 2px solid var(--accent); outline-offset: 3px; }
+.tool-note { color: var(--subtle); font-size: .85rem; }
+.tool-badge { display: inline-block; background: #29223c; color: #d7cafa; border: 1px solid #4c4167; border-radius: 7px; padding: 5px 9px; font-size: .77rem; white-space: nowrap; }
+.tool-results-meta { display: flex; flex-wrap: wrap; gap: 8px 17px; padding: 14px 19px; border-top: 1px solid var(--line); color: var(--subtle); font-size: .85rem; }
+.tool-results-meta strong { color: var(--text); }
+.tool-diagnosis { padding: 12px 19px; color: var(--warning); border-top: 1px solid var(--line); font-size: .87rem; }
+.tool-result-table td { vertical-align: top; }
+.tool-result-table td small { margin-top: 3px; }
+.tool-result-table td:first-child, .tool-result-table td:nth-child(3) { max-width: 350px; overflow-wrap: anywhere; }
+
+@media (max-width: 1040px) {
+  .tool-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 850px) {
+  .nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 630px) {
+  .nav a { font-size: .67rem; }
+  .street-link { padding-inline: 7px; gap: 4px; }
+  .street-frame { height: 325px; }
+  .street-overlay { inset: 8px 8px auto; }
+  .street-controls { padding: 8px; gap: 7px; }
+  .street-timeline { gap: 6px; }
+  .street-timeline > span { display: none; }
+  .street-timeline output { min-width: 94px; font-size: .76rem; }
+  .street-info { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .street-filters { flex-wrap: wrap; gap: 7px; }
+  .street-filters select { min-width: 95px; }
+  .street-detail, .street-note, .tool-form, .tool-results-meta, .tool-diagnosis { padding-inline: 12px; }
+  .map-actions { flex-wrap: wrap; }
+}
+@media (max-width: 395px) {
+  .offer-fields { grid-template-columns: minmax(0, 1fr); }
+  .street-location { font-size: .74rem; }
+}

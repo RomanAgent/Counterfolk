@@ -4,10 +4,12 @@ import {
 } from './simulation.js';
 import { CSV_COLUMNS, exampleCalibrationCsv, parseCalibrationCsv } from './calibration-csv.js';
 import { createTrendChart, createWorldMap } from './visuals.js';
+import { createStreetView } from './street-view.js';
+import { createExperimentTools } from './experiment-tools.js';
 
 const get = (id) => document.getElementById(id);
 const arms = ['a', 'b'];
-const names = { world: '世界概览', experiments: '实验管理', audience: '居民与人群', calibration: '真实结果校准' };
+const names = { world: '世界概览', street: '街区漫游', experiments: '实验管理', audience: '居民与人群', calibration: '真实结果校准' };
 const stages = { unexposed: '未曝光', exposed: '已曝光', considered: '已考虑', purchase: '已购买', install: '已安装', activation: '已激活', paid: '已付费' };
 const targetLabels = { met: '达到阈值', below: '低于目标', uncertain: '结果接近阈值', 'no-data': '暂无曝光' };
 const integer = new Intl.NumberFormat('zh-CN');
@@ -33,6 +35,16 @@ let csvIsExample = false;
 const map = createWorldMap(get('world-map'), { onRegionChange: selectRegion });
 const trend = createTrendChart(get('trend'));
 const worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+const streetView = createStreetView({
+  onDemo: () => run({
+    ...initialConfig, name: 'AirLoop 随身空气监测器 · 门店试卖',
+    variants: Object.fromEntries(arms.map((id) => [id, { ...initialConfig.variants[id], channel: 'retail' }])),
+  }),
+  onNotify: toast,
+});
+const experimentTools = createExperimentTools({
+  runPrediction, download: downloadJson, escapeHtml, lookup, count, rate, points, message,
+});
 
 function escapeHtml(value) {
   const chars = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -103,6 +115,7 @@ function route() {
   }
   get('breadcrumb-title').textContent = names[current];
   document.title = `${names[current]} · Counterfolk`;
+  streetView.show(current === 'street', selectedRegion);
   window.scrollTo(0, 0);
 }
 
@@ -144,7 +157,7 @@ function renderWorld() {
   captionB.title = `${count(b.converted)} / ${count(b.exposed)} 人曝光`;
   get('metric-target').textContent = rate(config.target);
   const targetCaption = get('metric-target-caption');
-  targetCaption.textContent = b.targetStatus ? `原始模拟 · ${targetLabels[b.targetStatus]}` : '—';
+  targetCaption.textContent = b.targetStatus ? `${result.ai?.mode === 'hybrid' ? '混合模拟' : '原始模拟'} · ${targetLabels[b.targetStatus]}` : '—';
   targetCaption.dataset.tone = b.targetStatus === 'met' ? 'good' : b.targetStatus === 'uncertain' ? 'warning' : '';
   get('market-select').innerHTML = '<option value="all">全部市场</option>' + options(groups.regions);
   get('market-list').innerHTML = groups.regions.map((group) => `
@@ -176,13 +189,13 @@ function renderFunnel(a, b, label) {
 function renderExperiments() {
   const { config, a, b, comparison } = result;
   get('experiment-summary').innerHTML = `<article class="panel">
-    <div class="panel-header"><div><h2>${escapeHtml(config.name)}</h2><p>${lookup(METRICS, config.metric)}转化 · ${config.days} 天</p></div><button type="button" class="button button-muted" data-open-settings>${icon('settings')}调整参数</button></div>
+    <div class="panel-header"><div><h2>${escapeHtml(config.name)}</h2><p>${lookup(METRICS, config.metric)}转化 · ${config.days} 天${result.ai?.mode === 'hybrid' ? ' · AI 混合模拟' : ''}</p></div><button type="button" class="button button-muted" data-open-settings>${icon('settings')}调整参数</button></div>
     <div class="experiment-meta"><span>种子 ${config.seed}</span><span>${count(config.population)} 位居民</span><span>目标 ${rate(config.target)}</span><span>B − A ${points(comparison.lift, true)}</span><span>配对抽样区间 ${Number.isFinite(comparison.lift) ? comparison.interval.map(bound => points(bound, true)).join(' 至 ') : '—'}</span></div>
     <div class="variant-grid">${[a, b].map((stats, index) => {
       const id = arms[index];
       const variant = config.variants[id];
       return `<section class="variant-detail"><h3>${id.toUpperCase()} · ${escapeHtml(variant.name)}</h3><strong>${rate(stats.rate)}</strong>
-        <p>${price(variant.price, config.currency)} · ${lookup(CHANNELS, variant.channel)} · ${count(stats.converted)} / ${count(stats.exposed)} 人曝光</p>
+        <p>${price(variant.price, config.currency)}${variant.shippingFee ? ` + 运费 ${price(variant.shippingFee, config.currency)}` : ''} · ${lookup(CHANNELS, variant.channel)} · ${count(stats.converted)} / ${count(stats.exposed)} 人曝光</p>
         <p>模拟抽样区间 ${interval(stats.interval)}</p>
         <p>${Number.isFinite(stats.calibratedRate) ? `${calibration?.example ? '示例校准' : '校准后估计'} ${rate(stats.calibratedRate)}` : '暂无同口径校准'}</p>
       </section>`;
@@ -218,19 +231,33 @@ function renderAudience() {
 }
 
 function run(config, options = {}) {
-  if (activeRun) return;
-  activeRun = { record: options.record ?? true, announce: options.announce ?? true };
+  if (activeRun) return false;
+  activeRun = { record: options.record ?? true, announce: options.announce ?? true, complete: options.complete };
+  experimentTools.setBusy(true);
   get('submit-run').disabled = true;
   get('export').disabled = true;
   for (const button of document.querySelectorAll('[data-replay]')) button.disabled = true;
   get('fit-calibration').disabled = true;
   get('clear-calibration').disabled = true;
   if (activeRun.announce) toast('正在运行模拟…', true);
-  worker.postMessage({ config, calibration: calibration?.model ?? null });
+  worker.postMessage({ config, calibration: calibration?.model ?? null, decisions: options.decisions });
+  return true;
+}
+
+function runPrediction(config, decisions) {
+  return new Promise((resolve, reject) => {
+    const started = run(config, { decisions, record: false, announce: false, complete: (error, value) => {
+      if (error) reject(new Error(error));
+      else resolve(value);
+    } });
+    if (!started) reject(new Error('已有实验运行中，请稍后重试。'));
+  });
 }
 
 function finishRun(error) {
+  const task = activeRun;
   activeRun = null;
+  experimentTools.setBusy(false);
   get('submit-run').disabled = false;
   get('export').disabled = !result;
   for (const button of document.querySelectorAll('[data-replay]')) button.disabled = false;
@@ -240,6 +267,7 @@ function finishRun(error) {
     toast(error, true);
     if (settings.open) message(get('settings-feedback'), error, 'error');
   }
+  task?.complete?.(error, result);
 }
 
 worker.addEventListener('message', ({ data }) => {
@@ -262,12 +290,13 @@ worker.addEventListener('message', ({ data }) => {
       ...history.filter((entry) => JSON.stringify(entry.config) !== key),
     ].slice(0, 10);
   }
-  finishRun();
-  get('export').disabled = false;
   renderWorld();
   renderExperiments();
   renderAudience();
+  streetView.setResult(result);
+  experimentTools.setResult(result);
   persist();
+  finishRun();
   if (announce) toast(`模拟完成 · ${count(result.config.population)} 位居民 · ${lastDuration} ms`);
 });
 worker.addEventListener('error', () => finishRun('无法启动模拟 Worker，请通过本地服务器打开页面后刷新。'));
@@ -288,9 +317,18 @@ function populateSettings(config) {
     for (const checkbox of form.querySelectorAll(`input[name="${key}"]`)) checkbox.checked = config[key].includes(checkbox.value);
   }
   for (const id of arms) {
-    for (const key of ['name', 'price', 'appeal', 'localization', 'channel']) {
-      form.elements.namedItem(`${id}-${key}`).value = config.variants[id][key];
+    for (const key of ['name', 'price', 'shippingFee', 'appeal', 'localization', 'channel']) {
+      form.elements.namedItem(`${id}-${key}`).value = config.variants[id][key] ?? 0;
     }
+  }
+  updateShippingFields();
+}
+
+function updateShippingFields() {
+  for (const id of arms) {
+    const field = form.elements.namedItem(`${id}-shippingFee`);
+    field.disabled = form.elements.product.value !== 'hardware' || form.elements.namedItem(`${id}-channel`).value !== 'ecommerce';
+    field.closest('label').hidden = field.disabled;
   }
 }
 
@@ -305,14 +343,17 @@ function initializeSettings() {
     <label>名称<input name="${id}-name" required maxlength="48"></label>
     <label>价格<input name="${id}-price" type="number" required min="0" max="10000000" step="any"></label>
     <label>投放渠道<select name="${id}-channel">${options(CHANNELS)}</select></label>
+    <label>运费<input name="${id}-shippingFee" type="number" min="0" max="10000000" step="any" required></label>
     <label>吸引力 (0–100)<input name="${id}-appeal" type="number" required min="0" max="100" step="any"></label>
     <label>本地化 (0–100)<input name="${id}-localization" type="number" required min="0" max="100" step="any"></label>
   </div></fieldset>`).join('');
+  for (const id of arms) form.elements.namedItem(`${id}-channel`).addEventListener('change', updateShippingFields);
   form.elements.product.addEventListener('change', () => {
     const { product, currency } = form.elements;
     setMetrics(product.value);
     const defaults = normalizeConfig({ product: product.value, currency: currency.value });
     for (const id of arms) form.elements.namedItem(`${id}-price`).value = Number(defaults.variants[id].price.toFixed(2));
+    updateShippingFields();
   });
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -324,7 +365,7 @@ function initializeSettings() {
         target: Number(fields.get('target')) / 100,
         regions: fields.getAll('regions'), segments: fields.getAll('segments'), languages: fields.getAll('languages'),
         variants: Object.fromEntries(arms.map((id) => [id, Object.fromEntries(
-          ['name', 'price', 'channel', 'appeal', 'localization'].map((key) => [key, fields.get(`${id}-${key}`)])
+          ['name', 'price', 'shippingFee', 'channel', 'appeal', 'localization'].map((key) => [key, fields.get(`${id}-${key}`) ?? 0])
         )])),
       });
       settings.close();
@@ -360,18 +401,23 @@ function renderCalibration() {
   </article>`;
 }
 
-function exportResult() {
-  if (!result) return;
-  const serialized = JSON.stringify({
-    ...result, durationMs: lastDuration,
-    calibration: calibration ? { source: calibration.example ? 'synthetic-example' : 'user-import', model: calibration.model } : null,
-  }, null, 2);
+function downloadJson(value, filename) {
+  const serialized = JSON.stringify(value, null, 2);
   const url = URL.createObjectURL(new Blob([serialized], { type: 'application/json' }));
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `counterfolk-${result.config.seed}-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.download = filename;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportResult() {
+  if (!result) return;
+  downloadJson({
+    ...result, durationMs: lastDuration,
+    calibration: calibration ? { source: calibration.example ? 'synthetic-example' : 'user-import', model: calibration.model } : null,
+    workbench: experimentTools.exportBundle(result.config),
+  }, `counterfolk-${result.config.seed}-${new Date().toISOString().slice(0, 10)}.json`);
 }
 
 get('engine-version').textContent = `v${ENGINE_VERSION} · 规则驱动`;

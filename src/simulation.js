@@ -1,4 +1,4 @@
-export const ENGINE_VERSION = '1.0.0';
+export const ENGINE_VERSION = '1.1.0';
 
 export const REGIONS = [
   { id: 'us', name: '美国', city: '纽约', latitude: 40.71, longitude: -74, language: 'en', locale: 'en-US' },
@@ -63,8 +63,8 @@ export const DEFAULT_CONFIG = {
   culture: 'mixed',
   languages: [],
   variants: {
-    a: { name: '方案 A', price: 149, appeal: 58, localization: 75, channel: 'ecommerce' },
-    b: { name: '方案 B', price: 119, appeal: 58, localization: 75, channel: 'ecommerce' },
+    a: { name: '方案 A', price: 149, shippingFee: 0, appeal: 58, localization: 75, channel: 'ecommerce' },
+    b: { name: '方案 B', price: 119, shippingFee: 0, appeal: 58, localization: 75, channel: 'ecommerce' },
   },
 };
 
@@ -73,6 +73,9 @@ const PRODUCTS = [{ id: 'hardware' }, { id: 'app' }];
 const PROFILE_CULTURES = CULTURES.filter(({ id }) => id !== 'mixed');
 const OCCUPATIONS = ['学生', '办公室职员', '自由职业者', '服务业职员', '技术人员'];
 const Z_95 = 1.959963984540054;
+const MODEL_SAMPLE_LIMIT = 48;
+const MODEL_SAMPLE_SEARCH_LIMIT = 4096;
+const COMPREHENSION_EFFECT = { clear: 0.5, neutral: 0, unclear: -0.5 };
 
 function number(value, label, min, max, integer = false) {
   const parsed = typeof value === 'string' && value.trim() ? Number(value) : value;
@@ -114,6 +117,7 @@ export function normalizeConfig(input = {}) {
     return [id, {
       name: label(variant.name, '方案名称', 48),
       price: number(variant.price, '价格', 0, 10_000_000),
+      shippingFee: number(variant.shippingFee, '配送费', 0, 10_000_000),
       appeal: number(variant.appeal, '方案吸引力', 0, 100),
       localization: number(variant.localization, '本地化', 0, 100),
       channel: choice(variant.channel, CHANNELS, '渠道'),
@@ -199,21 +203,23 @@ function encounterDays(random, agent, days) {
   return { ecommerce, retail };
 }
 
-function journey(agent, variant, product, metric, day, draws) {
+function journey(agent, variant, product, metric, day, draws, comprehension = 0) {
   if (day === null) return { day, stage: 'unexposed', reason: '未访问测试渠道' };
 
   const appeal = variant.appeal / 100;
   const localization = variant.localization / 100;
   const languageFit = agent.language === 'en' ? 1 : localization;
   const experience = variant.channel === 'ecommerce' ? agent.onlinePreference : 1 - agent.onlinePreference;
-  const relativePrice = Math.log1p(variant.price / agent.budget);
+  const deliveredPrice = variant.price + (product === 'hardware' && variant.channel === 'ecommerce' ? variant.shippingFee : 0);
+  const relativePrice = Math.log1p(deliveredPrice / agent.budget);
   const valueSensitivity = agent.segment === 'value' ? 1.45 : 1;
   const curiosity = agent.segment === 'enthusiast' ? 0.25 : 0;
   const cultureFit = agent.culture === 'community' && variant.channel === 'retail' ? 0.12 : 0;
   const routineBarrier = agent.culture === 'routine' ? (1 - experience) * 0.22 : 0;
   const considerChance = probability(
     -0.43 + 1.7 * (appeal - 0.5) + 2 * (agent.need - 0.5) + 0.6 * experience
-    + curiosity + cultureFit - routineBarrier - 0.72 * relativePrice * valueSensitivity - 1.25 * (1 - languageFit),
+    + curiosity + cultureFit - routineBarrier - 0.72 * relativePrice * valueSensitivity - 1.25 * (1 - languageFit)
+    + comprehension,
   );
   if (draws.consider >= considerChance) {
     const reason = languageFit < 0.45 ? '商品信息缺少本地化' : '产品需求不足';
@@ -266,7 +272,7 @@ function record(stats, { stage, reason }) {
   if (reason) stats.reasons[reason] = (stats.reasons[reason] ?? 0) + 1;
 }
 
-function wilson(converted, exposed) {
+export function wilson(converted, exposed) {
   if (exposed === 0) return [null, null];
   const rate = converted / exposed;
   const zSquared = Z_95 ** 2;
@@ -324,8 +330,104 @@ function pairedComparison(a, b, pairedOutcomes, population) {
   return { lift, interval: [Math.max(-1, lift - Z_95 * standardError), Math.min(1, lift + Z_95 * standardError)] };
 }
 
+function pairedAssignedComparison(a, b, pairedOutcomes, population) {
+  const lift = (b.converted - a.converted) / population;
+  const discordant = pairedOutcomes[2] + pairedOutcomes[5] + pairedOutcomes[6] + pairedOutcomes[7];
+  const standardError = Math.sqrt(Math.max(0, discordant / population - lift ** 2) / (population - 1));
+  return { lift, interval: [Math.max(-1, lift - Z_95 * standardError), Math.min(1, lift + Z_95 * standardError)] };
+}
+
+function residentScenario(random, config, regionById, currencyScale) {
+  // Isolate each resident's draws so editing offers or duration does not change later profiles.
+  const agentRandom = randomFrom(Math.floor(random() * 4_294_967_296));
+  const agent = makeAgent(agentRandom, config, regionById, currencyScale);
+  const draws = { consider: agentRandom(), competitor: agentRandom(), action: agentRandom(), activate: agentRandom(), pay: agentRandom() };
+  return { agent, draws, days: encounterDays(agentRandom, agent, config.days) };
+}
+
+function publicProfile(id, { region, segment, culture, language, occupation, budget, preference }) {
+  return { id, region, segment, culture, language, occupation, budget: Math.round(budget), preference };
+}
+
+function interleave(groups, limit) {
+  const ordered = [];
+  for (let tier = 0; ordered.length < limit; tier++) {
+    const available = groups.filter((group) => group.length > tier);
+    if (available.length === 0) break;
+    ordered.push(...available.map((group) => group[tier]));
+  }
+  return ordered.slice(0, limit);
+}
+
+function modelSampleFor(config, regionById, currencyScale) {
+  const random = randomFrom(config.seed);
+  const markets = new Map(config.regions.map((id) => [id, new Map()]));
+  const searchLimit = Math.min(config.population, MODEL_SAMPLE_SEARCH_LIMIT);
+  for (let id = 1; id <= searchLimit; id++) {
+    const { agent, days } = residentScenario(random, config, regionById, currencyScale);
+    if (ARM_IDS.some((arm) => days[config.variants[arm].channel] === null)) continue;
+    const strata = markets.get(agent.region);
+    const stratum = `${agent.segment}/${agent.language}`;
+    const candidates = strata.get(stratum) ?? [];
+    if (candidates.length < MODEL_SAMPLE_LIMIT) candidates.push(publicProfile(id, agent));
+    strata.set(stratum, candidates);
+  }
+  const marketSamples = [...markets.values()].map((strata) => interleave([...strata.values()], MODEL_SAMPLE_LIMIT));
+  return interleave(marketSamples, MODEL_SAMPLE_LIMIT);
+}
+
+function normalizeModelDecision(value) {
+  if (!value || typeof value.comprehension !== 'string' || !Object.hasOwn(COMPREHENSION_EFFECT, value.comprehension)
+    || typeof value.reason !== 'string' || !value.reason.trim() || value.reason.trim().length > 500) return null;
+  return { comprehension: value.comprehension, reason: value.reason.trim() };
+}
+
+function prepareDecisions(input, sample) {
+  if (!input) return null;
+  const pool = new Set(sample.map(({ id }) => id));
+  const selected = [...new Set((Array.isArray(input.selected) ? input.selected : []))].filter((id) => pool.has(id));
+  const selectedSet = new Set(selected);
+  const entries = new Map();
+  const seen = new Set();
+  for (const row of Array.isArray(input.entries) ? input.entries : []) {
+    if (!selectedSet.has(row?.agentId)) continue;
+    if (seen.has(row.agentId)) {
+      entries.delete(row.agentId);
+      continue;
+    }
+    seen.add(row.agentId);
+    const a = normalizeModelDecision(row.a);
+    const b = normalizeModelDecision(row.b);
+    if (a && b) entries.set(row.agentId, { agentId: row.agentId, a, b });
+  }
+  const profile = Object.fromEntries(['provider', 'model', 'version', 'promptVersion']
+    .filter((key) => typeof input.profile?.[key] === 'string' && input.profile[key].length <= 160)
+    .map((key) => [key, input.profile[key]]));
+  const mode = input.mode === 'interview' ? 'interview' : 'hybrid';
+  return { selected, entries, profile, mode };
+}
+
+// Place ordered events on a clock for the street replay. Stage counts remain on the original cohort day.
+const REPLAY_MINUTES = { exposed: 0, considered: 12, purchase: 23, install: 18, activation: 29, paid: 44, exit: 35 };
+
+function sampleTrace(id, arm, channel, { day, stage, reason }) {
+  if (day === null) return [];
+  const minute = (channel === 'retail' ? 9 * 60 : 7 * 60) + (id * 73 + day * 17) % 600;
+  const types = ['exposed'];
+  if (stage !== 'exposed') types.push('considered');
+  if (stage === 'purchase') types.push('purchase');
+  if (metricReached(stage, 'install')) types.push('install');
+  if (metricReached(stage, 'activation')) types.push('activation');
+  if (stage === 'paid') types.push('paid');
+  if (reason) types.push('exit');
+  return types.map((type, order) => ({
+    id: `${id}:${arm}:${type}`, type, day, minute: minute + REPLAY_MINUTES[type], order, channel,
+    ...(type === 'exit' ? { reason } : {}),
+  }));
+}
+
 /** Each simulated agent can see each alternative once, using shared random draws across the pair. */
-export function simulate(input = {}, { calibration, onProgress } = {}) {
+export function simulate(input = {}, { calibration, decisions, onProgress } = {}) {
   const config = normalizeConfig(input);
   const regionById = Object.fromEntries(REGIONS.map(item => [item.id, item]));
   const currencyScale = CURRENCIES.find(({ id }) => id === config.currency).scale;
@@ -347,20 +449,29 @@ export function simulate(input = {}, { calibration, onProgress } = {}) {
     languages: groupCounts(LANGUAGES, languages),
   };
   const daily = Array.from({ length: config.days }, (_, index) => ({ day: index + 1, a: counts(), b: counts() }));
+  const regionalDaily = Object.fromEntries(config.regions.map((region) => [region, Array.from({ length: config.days },
+    (_, index) => ({ day: index + 1, a: counts(), b: counts() }))]));
   const agents = [];
   const sampledByRegion = Object.fromEntries(config.regions.map(id => [id, 0]));
   const pairedOutcomes = new Uint32Array(9);
   const progressStep = Math.ceil(config.population / 20);
   onProgress?.(0);
+  const modelSample = modelSampleFor(config, regionById, currencyScale);
+  const modelDecisions = prepareDecisions(decisions, modelSample);
+  let changed = 0;
 
   for (let index = 0; index < config.population; index++) {
-    // One seed per agent keeps profiles stable when an experiment changes its duration or offer.
-    const agentRandom = randomFrom(Math.floor(random() * 4_294_967_296));
-    const agent = makeAgent(agentRandom, config, regionById, currencyScale);
-    const draws = { consider: agentRandom(), competitor: agentRandom(), action: agentRandom(), activate: agentRandom(), pay: agentRandom() };
-    const days = encounterDays(agentRandom, agent, config.days);
-    const a = journey(agent, config.variants.a, config.product, config.metric, days[config.variants.a.channel], draws);
-    const b = journey(agent, config.variants.b, config.product, config.metric, days[config.variants.b.channel], draws);
+    const id = index + 1;
+    const { agent, draws, days } = residentScenario(random, config, regionById, currencyScale);
+    const pair = modelDecisions?.mode === 'hybrid' ? modelDecisions.entries.get(id) : null;
+    const { a: variantA, b: variantB } = config.variants;
+    const a = journey(agent, variantA, config.product, config.metric, days[variantA.channel], draws, COMPREHENSION_EFFECT[pair?.a.comprehension] ?? 0);
+    const b = journey(agent, variantB, config.product, config.metric, days[variantB.channel], draws, COMPREHENSION_EFFECT[pair?.b.comprehension] ?? 0);
+    if (pair) {
+      const baselineA = journey(agent, variantA, config.product, config.metric, days[variantA.channel], draws);
+      const baselineB = journey(agent, variantB, config.product, config.metric, days[variantB.channel], draws);
+      if (a.stage !== baselineA.stage || b.stage !== baselineB.stage) changed++;
+    }
     const stages = { a, b };
     const regionSegment = groups.regionSegments[`${agent.region}/${agent.segment}`];
     for (const id of ARM_IDS) {
@@ -372,16 +483,20 @@ export function simulate(input = {}, { calibration, onProgress } = {}) {
       record(groups.channels[config.variants[id].channel][id], stage);
       record(groups.cultures[agent.culture][id], stage);
       record(groups.languages[agent.language][id], stage);
-      if (stage.day !== null) record(daily[stage.day - 1][id], stage);
+      if (stage.day !== null) {
+        record(daily[stage.day - 1][id], stage);
+        record(regionalDaily[agent.region][stage.day - 1][id], stage);
+      }
     }
     const outcomeA = Number(a.day !== null) + Number(metricReached(a.stage, config.metric));
     const outcomeB = Number(b.day !== null) + Number(metricReached(b.stage, config.metric));
     pairedOutcomes[outcomeA * 3 + outcomeB]++;
 
     if (sampledByRegion[agent.region] < 4) {
-      const { region, segment, culture, language, occupation, budget, preference } = agent;
       sampledByRegion[agent.region]++;
-      agents.push({ id: index + 1, region, segment, culture, language, occupation, budget: Math.round(budget), preference, a, b });
+      agents.push({ ...publicProfile(id, agent), a, b, trace: {
+        a: sampleTrace(id, 'a', variantA.channel, a), b: sampleTrace(id, 'b', variantB.channel, b),
+      } });
     }
     if ((index + 1) % progressStep === 0 && index + 1 < config.population) onProgress?.((index + 1) / config.population);
   }
@@ -396,12 +511,24 @@ export function simulate(input = {}, { calibration, onProgress } = {}) {
       id: item.id,
       name: item.name,
       ...(group === 'regionSegments' ? { region, segment } : {}),
+      ...(group === 'regions' ? {
+        daily: regionalDaily[item.id].map(({ day, a, b }) => ({ day, a: finish(a, config), b: finish(b, config) })),
+      } : {}),
       a: finish(item.a, config, groupCalibration, { region, segment, channel: config.variants.a.channel }),
       b: finish(item.b, config, groupCalibration, { region, segment, channel: config.variants.b.channel }),
     };
   })]));
   const dayResults = daily.map(item => ({ day: item.day, a: finish(item.a, config), b: finish(item.b, config) }));
-  const result = { config, version: ENGINE_VERSION, a, b, groups: groupResults, daily: dayResults, agents, comparison: pairedComparison(a, b, pairedOutcomes, config.population) };
+  const comparison = pairedComparison(a, b, pairedOutcomes, config.population);
+  const assignedComparison = pairedAssignedComparison(a, b, pairedOutcomes, config.population);
+  const ai = modelDecisions && {
+    mode: modelDecisions.mode, profile: modelDecisions.profile,
+    selected: modelDecisions.selected, entries: [...modelDecisions.entries.values()],
+    attempted: modelDecisions.selected.length, successful: modelDecisions.entries.size,
+    applied: modelDecisions.mode === 'hybrid' ? modelDecisions.entries.size : 0,
+    changed, fallback: modelDecisions.selected.length - modelDecisions.entries.size,
+  };
+  const result = { config, version: ENGINE_VERSION, a, b, groups: groupResults, daily: dayResults, agents, modelSample, comparison, assignedComparison, ai };
   onProgress?.(1);
   return result;
 }

@@ -3,6 +3,7 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createModelRoutes } from '../server/model-routes.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const mime = {
@@ -13,13 +14,16 @@ const mime = {
 };
 const port = Number(process.env.COUNTERFOLK_PORT || '4177');
 
+const handleModelRoute = createModelRoutes();
+
 const server = http.createServer(async (request, response) => {
   try {
+    if (await handleModelRoute(request, response)) return;
     const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
     const file = resolve(root, path === '/' ? 'index.html' : `.${path}`);
     if (!file.startsWith(root + sep) || !Object.hasOwn(mime, extname(file))
       || (file !== resolve(root, 'index.html')
-        && !['src', 'assets'].some((dir) => file.startsWith(resolve(root, dir) + sep)))) {
+        && !['src', 'assets', 'vendor'].some((dir) => file.startsWith(resolve(root, dir) + sep)))) {
       response.writeHead(404).end();
       return;
     }

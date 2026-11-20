@@ -8,6 +8,7 @@
   <title>Counterfolk · 众生镜</title>
   <link rel="icon" href="./assets/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./src/styles.css">
+  <link rel="stylesheet" href="./src/experiment-tools.css">
   <script type="module" src="./src/app.js"></script>
 </head>
 <body>
@@ -22,6 +23,9 @@
     <symbol id="icon-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
     <symbol id="icon-trend" viewBox="0 0 24 24"><path d="m3 16 6-6 4 4 7-8m-6 0h6v6"/></symbol>
     <symbol id="icon-store" viewBox="0 0 24 24"><path d="M4 10 6 4h12l2 6v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0v-3Zm0 0h16M6 15v5h12v-5m-8 5v-3h4v3"/></symbol>
+    <symbol id="icon-cube" viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Zm0 9 8-4.5M12 12 4 7.5m8 4.5v9M8 5.2l8 4.6"/></symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M9 5v14m6-14v14"/></symbol>
+    <symbol id="icon-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M10 10h4v4h-4zM9 3v3m6-3v3m-6 12v3m6-3v3M3 9h3m-3 6h3m12-6h3m-3 6h3"/></symbol>
     <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
     <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
@@ -38,9 +42,10 @@
     <nav class="nav" aria-label="工作区">
       <p>工作区</p>
       <a href="#world" data-route="world"><svg><use href="#icon-world"/></svg>世界概览</a>
+      <a href="#street" data-route="street"><svg><use href="#icon-cube"/></svg>街区漫游</a>
       <a href="#experiments" data-route="experiments"><svg><use href="#icon-flask"/></svg>实验管理</a>
       <a href="#audience" data-route="audience"><svg><use href="#icon-people"/></svg>居民与人群</a>
-      <a href="#calibration" data-route="calibration"><svg><use href="#icon-crosshair"/></svg>真实结果校准</a>
+      <a href="#calibration" data-route="calibration" aria-label="真实结果校准"><svg><use href="#icon-crosshair"/></svg>试点校准</a>
     </nav>
     <div class="sidebar-footer">
       <div class="engine-status"><span class="engine-icon"><svg><use href="#icon-activity"/></svg></span><div><strong>本地模拟引擎</strong><small id="engine-version">Counterfolk</small></div></div>
@@ -72,7 +77,7 @@
         <article class="panel world-panel" aria-labelledby="world-map-title">
           <div class="panel-header">
             <div><h2 id="world-map-title">世界地图</h2><p>市场分布与地区转化</p></div>
-            <div class="map-actions"><label class="sr-only" for="market-select">查看地区</label><select id="market-select"><option value="all">全部市场</option></select><button id="map-out" class="icon-button" type="button" aria-label="缩小地图" title="缩小"><svg><use href="#icon-minus"/></svg></button><button id="map-in" class="icon-button" type="button" aria-label="放大地图" title="放大"><svg><use href="#icon-plus"/></svg></button><button id="map-reset" class="icon-button" type="button" aria-label="重置地图" title="重置地图"><svg><use href="#icon-crosshair"/></svg></button></div>
+            <div class="map-actions"><a class="button button-muted street-link" href="#street"><svg aria-hidden="true"><use href="#icon-cube"/></svg>查看街区</a><label class="sr-only" for="market-select">查看地区</label><select id="market-select"><option value="all">全部市场</option></select><button id="map-out" class="icon-button" type="button" aria-label="缩小地图" title="缩小"><svg><use href="#icon-minus"/></svg></button><button id="map-in" class="icon-button" type="button" aria-label="放大地图" title="放大"><svg><use href="#icon-plus"/></svg></button><button id="map-reset" class="icon-button" type="button" aria-label="重置地图" title="重置地图"><svg><use href="#icon-crosshair"/></svg></button></div>
           </div>
           <div class="world-layout">
             <div class="map-frame"><canvas id="world-map" tabindex="0" aria-label="模拟世界地图。也可以从查看地区菜单选择市场。">请使用查看地区菜单检视市场数据。</canvas></div>
@@ -100,9 +105,92 @@
         <footer class="content-footer">结果来自合成 Agent。达到阈值表示方案可进入真人试点。</footer>
       </section>
 
+      <section id="view-street" data-view="street" aria-labelledby="street-title" hidden>
+        <div class="page-heading">
+          <div><h1 id="street-title">街区漫游</h1><p>沿着模拟居民的足迹，查看一次商品实验。</p></div>
+        </div>
+        <article class="panel street-panel">
+          <div class="panel-header street-header">
+            <div><h2>实验街区</h2><p id="street-context">等待模拟结果</p></div>
+            <div class="street-filters">
+              <label><span>市场</span><select id="street-market"><option>正在准备</option></select></label>
+              <label><span>方案</span><select id="street-arm"><option value="a">方案 A</option><option value="b">方案 B</option></select></label>
+              <button class="button button-muted" id="street-demo" type="button" disabled>运行门店示例</button>
+            </div>
+          </div>
+          <div class="street-frame">
+            <canvas id="street-canvas" tabindex="0" aria-label="三维街区。使用左右键转动视角，加减键缩放，Enter 进入门店，Escape 返回街道。"></canvas>
+            <div id="street-placeholder" class="street-placeholder" role="status">正在加载街区…</div>
+            <div class="street-overlay" id="street-overlay" hidden>
+              <div class="street-location"><span aria-hidden="true"></span><strong id="street-location">街道视角</strong></div>
+              <div class="street-camera">
+                <button class="button button-muted" type="button" id="street-door"><svg aria-hidden="true"><use href="#icon-store"/></svg><span>进入门店</span></button>
+                <button class="icon-button" type="button" id="street-reset" title="重置视角" aria-label="重置视角"><svg aria-hidden="true"><use href="#icon-crosshair"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="street-controls">
+            <button class="icon-button" id="street-play" type="button" aria-label="播放观察时间" title="播放观察时间"><svg aria-hidden="true"><use href="#icon-play"/></svg></button>
+            <label class="street-timeline" for="street-day"><span>观察时间</span><input id="street-day" type="range" min="1" max="14" step="0.01" value="1"><output id="street-time" for="street-day">第 1 天 · 00:00</output></label>
+          </div>
+        </article>
+        <div class="street-info">
+          <article class="panel">
+            <div class="panel-header"><div><h2>居民轨迹</h2><p>从当前市场的样本中选择居民。</p></div><label class="sr-only" for="street-resident">选择居民</label><select id="street-resident"><option value="">选择居民</option></select></div>
+            <div class="street-detail" id="street-detail"><p>选择一位居民以查看观察日内的行为。</p></div>
+          </article>
+          <article class="panel">
+            <div class="panel-header"><div><h2>方案进展</h2><p id="street-snapshot-caption">按当前观察日累计</p></div></div>
+            <div id="street-snapshot" class="street-detail street-counts"></div>
+            <p class="street-note">位置、路径和分钟刻度用于回放。居民的曝光和转化来自模拟事件。</p>
+          </article>
+        </div>
+      </section>
+
       <section id="view-experiments" data-view="experiments" aria-labelledby="experiment-title" hidden>
         <div class="page-heading"><div><h1 id="experiment-title">实验管理</h1><p>比较两个方案的产品、价格和投放渠道。</p></div></div>
         <div id="experiment-summary" class="experiment-summary"></div>
+        <article class="panel section-panel" aria-labelledby="protocol-heading">
+          <div class="panel-header"><div><h2 id="protocol-heading">实验口径</h2><p>锁定素材版本与分流设置，用于 AI 访谈和真人对照。</p></div></div>
+          <form id="protocol-form" class="tool-form">
+            <div class="tool-fields">
+              <label>转化率分母<select name="denominator"><option value="assigned">全部合格分配对象</option><option value="exposed">已曝光对象</option></select></label>
+              <label>随机分流单位<select name="unit"><option value="person">个人</option><option value="store">门店</option><option value="timeBlock">时段</option></select></label>
+              <label>B 组计划分流 (%)<input name="allocationB" type="number" min="1" max="99" step="any" value="50" required></label>
+              <label>容许转化误差（百分点）<input name="tolerance" type="number" min="0.1" max="100" step="any" value="2" required></label>
+              <label>最小有意义的提升（百分点）<input name="minimumEffect" type="number" min="0" max="100" step="any" value="0" required></label>
+            </div>
+            <div class="tool-fields offer-fields">
+              <fieldset><legend>方案 A 的素材</legend><label>版本<input name="versionA" value="offer-a-v1" required maxlength="80"></label><label>商品文案<textarea name="contentA" rows="3" maxlength="2400" placeholder="粘贴参与测试的商品页文案"></textarea></label></fieldset>
+              <fieldset><legend>方案 B 的素材</legend><label>版本<input name="versionB" value="offer-b-v1" required maxlength="80"></label><label>商品文案<textarea name="contentB" rows="3" maxlength="2400" placeholder="粘贴参与测试的商品页文案"></textarea></label></fieldset>
+            </div>
+            <div class="tool-actions"><button type="submit" class="button button-primary">锁定口径</button><button type="button" class="button button-muted" id="protocol-download" disabled><svg aria-hidden="true"><use href="#icon-download"/></svg>导出工作包</button></div>
+            <p id="protocol-status" class="form-message" role="status">等待模拟结果。</p>
+          </form>
+        </article>
+        <article class="panel section-panel" aria-labelledby="ai-heading">
+          <div class="panel-header"><div><h2 id="ai-heading">居民 AI 实验</h2><p>让抽样居民读商品资料，记录对 A/B 方案的理解。</p></div><span class="tool-badge" id="model-status">正在检查模型服务</span></div>
+          <form id="model-form" class="tool-form">
+            <div class="tool-fields">
+              <label>提供商<select name="provider"><option value="ollama">Ollama · 本地</option><option value="openai">OpenAI · 云端</option><option value="compatible">OpenAI 兼容服务</option></select></label>
+              <label>模型名称<input name="model" required maxlength="120" placeholder="填入服务中的模型 ID"></label>
+              <label id="model-address">服务地址<input name="baseUrl" type="url" placeholder="http://127.0.0.1:11434"></label>
+              <label id="model-secret" hidden>API Key<input name="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="留空可使用服务端密钥"></label>
+              <label>运行模式<select name="mode"><option value="interview">抽样访谈</option><option value="hybrid">混合模拟 · 调整样本考虑概率</option></select></label>
+              <label>最多调用次数<input name="maxCalls" type="number" min="2" max="40" step="2" value="16" required></label>
+              <label>并行请求数<input name="concurrency" type="number" min="1" max="4" step="1" value="2" required></label>
+            </div>
+            <p class="tool-note" id="model-hint">每位样本使用独立上下文分别读取 A/B，需要两次调用。</p>
+            <div class="tool-actions"><button type="button" class="button button-muted" id="model-test" disabled>测试连接</button><button type="submit" class="button button-primary" id="model-run" disabled><svg aria-hidden="true"><use href="#icon-chip"/></svg>运行 AI</button><button type="button" class="button button-muted" id="model-cancel" hidden>取消调用</button></div>
+            <p id="model-feedback" class="form-message" role="status"></p>
+            <p class="tool-note" id="model-disclosure"></p>
+          </form>
+          <div id="model-results"></div>
+        </article>
+        <article class="panel section-panel" aria-labelledby="replay-heading">
+          <div class="panel-header"><div><h2 id="replay-heading">导入实验工作包</h2><p>恢复实验口径、合成预测与历史模型输出，用于重放或跨设备核对。</p></div></div>
+          <div class="tool-form"><label class="button button-muted" for="workbench-upload"><svg aria-hidden="true"><use href="#icon-file"/></svg>选择工作包 JSON</label><input id="workbench-upload" type="file" class="sr-only" accept=".json,application/json"><p id="workbench-feedback" class="form-message" role="status"></p></div>
+        </article>
         <article class="panel"><div class="panel-header"><div><h2>最近运行</h2><p>记录保存在当前浏览器。</p></div></div><div class="table-wrap"><table><thead><tr><th>实验</th><th>指标</th><th>居民</th><th>A 转化</th><th>B 转化</th><th>操作</th></tr></thead><tbody id="run-list"></tbody></table></div></article>
       </section>
 
@@ -114,8 +202,22 @@
       </section>
 
       <section id="view-calibration" data-view="calibration" aria-labelledby="calibration-title" hidden>
-        <div class="page-heading"><div><h1 id="calibration-title">真实结果校准</h1><p>用真人试点的汇总计数校准未来实验，并检查留出集误差。</p></div></div>
-        <article class="panel calibration-panel">
+        <div class="page-heading"><div><h1 id="calibration-title">真实结果校准</h1><p>验证模拟和真人 A/B 的差异，并用独立留出集检查校准效果。</p></div></div>
+        <article class="panel section-panel" aria-labelledby="trial-heading">
+          <div class="panel-header"><div><h2 id="trial-heading">真人 A/B 对照</h2><p id="trial-protocol">先在实验管理锁定口径，或导入已保存的工作包。</p></div><a class="button button-muted" href="#experiments">查看实验</a></div>
+          <form class="tool-form" id="trial-form">
+            <label>试点数据 JSON<textarea id="trial-input" rows="6" spellcheck="false" placeholder="粘贴包含实验 ID 和 A/B 计数的 JSON"></textarea></label>
+            <div class="tool-actions">
+              <button type="button" class="button button-muted" id="trial-example" disabled>填入合成示例</button>
+              <button type="button" class="button button-muted" id="trial-template" disabled>导出填报模板</button>
+              <label class="button button-muted" for="trial-upload">选择 JSON</label><input type="file" class="sr-only" id="trial-upload" accept=".json,application/json">
+              <button type="submit" class="button button-primary" id="trial-compare" disabled>对照并诊断</button>
+            </div>
+            <p id="trial-feedback" class="form-message" role="status"></p>
+          </form>
+          <div id="trial-results"></div>
+        </article>
+        <article class="panel section-panel calibration-panel">
           <div class="panel-header"><div><h2>导入试点结果</h2><p>支持包含历史模拟及真实计数的汇总 CSV。</p></div><button class="button button-muted" id="load-example" type="button"><svg><use href="#icon-file"/></svg>填入示例</button></div>
           <div class="calibration-form">
             <details class="field-help"><summary>查看数据口径和 CSV 格式</summary><p>一行记录一个实验方案与一个分组。需要对齐转化指标、观察天数、投放渠道与分母。训练行使用 train，留出验证行使用 holdout，同一个 experimentId 只能出现于一个集合。国家及人群填 ID，无分组时填 all。</p><p>硬件购买 purchase；App 安装 install、激活 activation、付费 paid。渠道使用 ecommerce 或 retail。下载模拟 JSON 可查实验和分组代码。</p><code id="csv-columns"></code></details>
