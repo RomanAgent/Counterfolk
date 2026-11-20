@@ -1,0 +1,12 @@
+{
+  "name": "counterfolk",
+  "version": "0.1.0",
+  "description": "An open-source market simulation and calibration lab.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node scripts/serve.js",
+    "test": "node --test",
+    "benchmark": "node scripts/benchmark.js"
+  }
+}

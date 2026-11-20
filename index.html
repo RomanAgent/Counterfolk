@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11111a">
+  <meta name="description" content="Counterfolk 众生镜 · 用合成居民比较产品实验，用真实试点校准模拟。">
+  <title>Counterfolk · 众生镜</title>
+  <link rel="icon" href="./assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./src/styles.css">
+  <script type="module" src="./src/app.js"></script>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" class="symbols" aria-hidden="true">
+    <symbol id="icon-world" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/></symbol>
+    <symbol id="icon-flask" viewBox="0 0 24 24"><path d="M9 3h6m-5 0v7l-5 8a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-8V3M7.5 15h9"/></symbol>
+    <symbol id="icon-people" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-4M15 3a4 4 0 0 1 0 8"/><circle cx="9" cy="7" r="4"/></symbol>
+    <symbol id="icon-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></symbol>
+    <symbol id="icon-box" viewBox="0 0 24 24"><path d="m12 3 9 5v8l-9 5-9-5V8l9-5Zm0 9v9m9-13-9 4-9-4m4.5-2.5 9 4.5"/></symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7V5Z"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4m4 6v4H4v-4"/></symbol>
+    <symbol id="icon-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+    <symbol id="icon-trend" viewBox="0 0 24 24"><path d="m3 16 6-6 4 4 7-8m-6 0h6v6"/></symbol>
+    <symbol id="icon-store" viewBox="0 0 24 24"><path d="M4 10 6 4h12l2 6v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0v-3Zm0 0h16M6 15v5h12v-5m-8 5v-3h4v3"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M5 4v16M12 4v16m7-16v16M3 8h4m3 8h4m3-7h4"/></symbol>
+    <symbol id="icon-file" viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5V3Zm9 0v6h5M8 13h8m-8 4h5"/></symbol>
+  </svg>
+
+  <aside class="sidebar">
+    <a class="brand" href="#world" aria-label="Counterfolk 世界概览">
+      <img src="./assets/mark.svg" alt="" width="35" height="35">
+      <div><strong>Counterfolk</strong><span>众生镜</span></div>
+    </a>
+    <nav class="nav" aria-label="工作区">
+      <p>工作区</p>
+      <a href="#world" data-route="world"><svg><use href="#icon-world"/></svg>世界概览</a>
+      <a href="#experiments" data-route="experiments"><svg><use href="#icon-flask"/></svg>实验管理</a>
+      <a href="#audience" data-route="audience"><svg><use href="#icon-people"/></svg>居民与人群</a>
+      <a href="#calibration" data-route="calibration"><svg><use href="#icon-crosshair"/></svg>真实结果校准</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="engine-status"><span class="engine-icon"><svg><use href="#icon-activity"/></svg></span><div><strong>本地模拟引擎</strong><small id="engine-version">Counterfolk</small></div></div>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <div class="breadcrumb"><span>工作区</span><span aria-hidden="true">/</span><strong id="breadcrumb-title">世界概览</strong></div>
+      <div class="top-actions">
+        <button id="export" type="button" class="button button-muted" disabled><svg><use href="#icon-download"/></svg><span>导出结果</span></button>
+        <button type="button" class="button button-primary" data-open-settings><svg><use href="#icon-play"/></svg>配置实验</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="view-world" data-view="world" aria-labelledby="world-title">
+        <div class="page-heading">
+          <div><h1 id="world-title">世界概览</h1><p>观察居民如何发现、比较并选择你的产品。</p></div>
+          <div class="current-project"><span class="project-icon"><svg><use href="#icon-box"/></svg></span><div><small>当前实验</small><strong id="world-experiment-name">正在准备示例</strong></div></div>
+        </div>
+        <div class="metrics" aria-label="实验摘要">
+          <article class="metric-card"><div class="metric-label"><svg><use href="#icon-people"/></svg>模拟居民</div><strong id="metric-population">—</strong><small id="metric-population-caption">生成合成人群</small></article>
+          <article class="metric-card"><div class="metric-label"><svg><use href="#icon-activity"/></svg>方案 A 转化</div><strong id="metric-a">—</strong><small id="metric-a-caption">等待模拟</small></article>
+          <article class="metric-card"><div class="metric-label"><svg><use href="#icon-trend"/></svg>方案 B 转化</div><strong id="metric-b">—</strong><small id="metric-b-caption">等待模拟</small></article>
+          <article class="metric-card"><div class="metric-label"><svg><use href="#icon-crosshair"/></svg>方案 B 目标</div><strong id="metric-target">—</strong><small id="metric-target-caption">等待模拟</small></article>
+        </div>
+
+        <article class="panel world-panel" aria-labelledby="world-map-title">
+          <div class="panel-header">
+            <div><h2 id="world-map-title">世界地图</h2><p>市场分布与地区转化</p></div>
+            <div class="map-actions"><label class="sr-only" for="market-select">查看地区</label><select id="market-select"><option value="all">全部市场</option></select><button id="map-out" class="icon-button" type="button" aria-label="缩小地图" title="缩小"><svg><use href="#icon-minus"/></svg></button><button id="map-in" class="icon-button" type="button" aria-label="放大地图" title="放大"><svg><use href="#icon-plus"/></svg></button><button id="map-reset" class="icon-button" type="button" aria-label="重置地图" title="重置地图"><svg><use href="#icon-crosshair"/></svg></button></div>
+          </div>
+          <div class="world-layout">
+            <div class="map-frame"><canvas id="world-map" tabindex="0" aria-label="模拟世界地图。也可以从查看地区菜单选择市场。">请使用查看地区菜单检视市场数据。</canvas></div>
+            <div class="market-rail">
+              <div class="market-rail-heading"><span>地区</span><span>居民数量</span></div>
+              <div id="market-list"></div>
+            </div>
+          </div>
+          <div class="world-footer">
+            <span class="map-key"><i></i>模拟市场</span>
+            <span id="market-description" aria-live="polite">正在生成模拟世界</span>
+          </div>
+        </article>
+
+        <div class="chart-grid">
+          <article class="panel" aria-labelledby="trend-title">
+            <div class="panel-header"><div><h2 id="trend-title">转化趋势</h2><p>按首次曝光日统计</p></div><div class="legend"><span><i class="variant-a"></i>方案 A</span><span><i class="variant-b"></i>方案 B</span></div></div>
+            <div class="trend-frame"><canvas id="trend" tabindex="0" role="img" aria-label="模拟转化率趋势">日度数据可从导出结果中查看。</canvas></div>
+          </article>
+          <article class="panel" aria-labelledby="funnel-title">
+            <div class="panel-header"><div><h2 id="funnel-title">转化漏斗</h2><p id="funnel-note">全部市场</p></div></div>
+            <div id="funnel" class="funnel"></div>
+          </article>
+        </div>
+        <footer class="content-footer">结果来自合成 Agent。达到阈值表示方案可进入真人试点。</footer>
+      </section>
+
+      <section id="view-experiments" data-view="experiments" aria-labelledby="experiment-title" hidden>
+        <div class="page-heading"><div><h1 id="experiment-title">实验管理</h1><p>比较两个方案的产品、价格和投放渠道。</p></div></div>
+        <div id="experiment-summary" class="experiment-summary"></div>
+        <article class="panel"><div class="panel-header"><div><h2>最近运行</h2><p>记录保存在当前浏览器。</p></div></div><div class="table-wrap"><table><thead><tr><th>实验</th><th>指标</th><th>居民</th><th>A 转化</th><th>B 转化</th><th>操作</th></tr></thead><tbody id="run-list"></tbody></table></div></article>
+      </section>
+
+      <section id="view-audience" data-view="audience" aria-labelledby="audience-title" hidden>
+        <div class="page-heading"><div><h1 id="audience-title">居民与人群</h1><p>查看合成居民的构成、成交差异和退出原因。</p></div></div>
+        <article class="panel section-panel"><div class="panel-header"><div><h2>人群构成</h2><p>转化率以各组内的已曝光人数计算。</p></div><div><label class="sr-only" for="group-select">分组维度</label><select id="group-select"><option value="regions">国家</option><option value="segments">买家分群</option><option value="regionSegments">国家 × 买家分群</option><option value="cultures">文化偏好</option><option value="languages">语言</option><option value="channels">渠道</option></select></div></div><div class="table-wrap"><table><thead><tr><th>分组</th><th>居民</th><th>A 曝光</th><th>A 转化</th><th>B 曝光</th><th>B 转化</th></tr></thead><tbody id="audience-table"></tbody></table></div></article>
+        <div class="chart-grid section-panel" id="exit-reasons"></div>
+        <article class="panel section-panel"><div class="panel-header"><div><h2>居民样本</h2><p>查看同一位居民在两个方案中的行为。</p></div></div><div class="table-wrap"><table><thead><tr><th>居民</th><th>国家</th><th>职业与偏好</th><th>语言</th><th>方案 A</th><th>方案 B</th></tr></thead><tbody id="agent-samples"></tbody></table></div></article>
+      </section>
+
+      <section id="view-calibration" data-view="calibration" aria-labelledby="calibration-title" hidden>
+        <div class="page-heading"><div><h1 id="calibration-title">真实结果校准</h1><p>用真人试点的汇总计数校准未来实验，并检查留出集误差。</p></div></div>
+        <article class="panel calibration-panel">
+          <div class="panel-header"><div><h2>导入试点结果</h2><p>支持包含历史模拟及真实计数的汇总 CSV。</p></div><button class="button button-muted" id="load-example" type="button"><svg><use href="#icon-file"/></svg>填入示例</button></div>
+          <div class="calibration-form">
+            <details class="field-help"><summary>查看数据口径和 CSV 格式</summary><p>一行记录一个实验方案与一个分组。需要对齐转化指标、观察天数、投放渠道与分母。训练行使用 train，留出验证行使用 holdout，同一个 experimentId 只能出现于一个集合。国家及人群填 ID，无分组时填 all。</p><p>硬件购买 purchase；App 安装 install、激活 activation、付费 paid。渠道使用 ecommerce 或 retail。下载模拟 JSON 可查实验和分组代码。</p><code id="csv-columns"></code></details>
+            <label for="calibration-input">试点汇总 CSV</label>
+            <textarea id="calibration-input" rows="7" spellcheck="false" placeholder="粘贴包含表头的 CSV，或读取本地文件"></textarea>
+            <div class="calibration-actions"><label class="button button-muted file-button" for="csv-upload">选择 CSV</label><input id="csv-upload" class="sr-only" type="file" accept=".csv,text/csv"><button class="button button-primary" id="fit-calibration" type="button">拟合并验证</button><button class="button button-muted" id="clear-calibration" type="button" hidden>清除校准</button></div>
+            <p id="calibration-feedback" class="form-message" role="status"></p>
+          </div>
+        </article>
+        <div id="calibration-results" class="section-panel"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="settings" class="settings-dialog" aria-labelledby="settings-title">
+    <form id="settings-form">
+      <div class="settings-title"><div><h2 id="settings-title">配置实验</h2><p>为同一批合成居民设置两个备选方案。</p></div><button type="button" class="icon-button" id="close-settings" aria-label="关闭设置"><svg><use href="#icon-close"/></svg></button></div>
+      <div class="settings-body">
+        <div class="fields">
+          <label class="wide">实验名称<input name="name" required maxlength="100"></label>
+          <label>产品类型<select name="product"><option value="hardware">硬件</option><option value="app">App</option></select></label>
+          <label>转化指标<select name="metric"></select></label>
+          <label>居民数量<input name="population" type="number" min="1000" max="100000" step="1" required></label>
+          <label>观察天数<input name="days" type="number" min="1" max="90" required step="1"></label>
+          <label>随机种子<input name="seed" type="number" min="0" max="4294967295" required step="1"></label>
+          <label>转化目标 (%)<input name="target" type="number" min="0" max="100" step="any" required></label>
+          <label>文化偏好<select name="culture"></select></label>
+          <label>实验货币<select name="currency"></select></label>
+        </div>
+        <fieldset><legend>国家</legend><div id="regions-fields" class="checks"></div></fieldset>
+        <fieldset><legend>买家分群</legend><div id="segments-fields" class="checks"></div></fieldset>
+        <fieldset><legend>语言覆盖</legend><p>未勾选时，使用各市场的默认语言。</p><div id="languages-fields" class="checks"></div></fieldset>
+        <div class="variant-settings" id="variant-settings"></div>
+      </div>
+      <div class="settings-footer"><p id="settings-feedback" class="form-message" role="status"></p><button class="button button-muted" type="button" id="cancel-settings">取消</button><button class="button button-primary" type="submit" id="submit-run"><svg><use href="#icon-play"/></svg>运行模拟</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
