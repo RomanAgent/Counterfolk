@@ -39,3 +39,7 @@ export function testModelConnection(profile, { signal } = {}) {
 export function runModelPanel({ profile, product, personas }, { signal } = {}) {
   return request('/run', { profile, product, personas }, signal);
 }
+
+export function generateProductMarketing({ profile, product }, { signal } = {}) {
+  return request('/marketing', { profile, product }, signal);
+}

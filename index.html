@@ -9,6 +9,8 @@
   <link rel="icon" href="./assets/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./src/styles.css">
   <link rel="stylesheet" href="./src/experiment-tools.css">
+  <link rel="stylesheet" href="./src/marketplace.css">
+  <link rel="stylesheet" href="./src/commerce-workspace.css">
   <script type="module" src="./src/app.js"></script>
 </head>
 <body>
@@ -35,17 +37,21 @@
   </svg>
 
   <aside class="sidebar">
-    <a class="brand" href="#world" aria-label="Counterfolk 世界概览">
+    <a class="brand" href="#commerce" aria-label="Counterfolk 电商工作区">
       <img src="./assets/mark.svg" alt="" width="35" height="35">
       <div><strong>Counterfolk</strong><span>众生镜</span></div>
     </a>
     <nav class="nav" aria-label="工作区">
-      <p>工作区</p>
-      <a href="#world" data-route="world"><svg><use href="#icon-world"/></svg>世界概览</a>
-      <a href="#street" data-route="street"><svg><use href="#icon-cube"/></svg>街区漫游</a>
-      <a href="#experiments" data-route="experiments"><svg><use href="#icon-flask"/></svg>实验管理</a>
-      <a href="#audience" data-route="audience"><svg><use href="#icon-people"/></svg>居民与人群</a>
-      <a href="#calibration" data-route="calibration" aria-label="真实结果校准"><svg><use href="#icon-crosshair"/></svg>试点校准</a>
+      <p>市场工作区</p>
+      <a href="#commerce" data-route="commerce"><svg aria-hidden="true"><use href="#icon-store"/></svg>电商平台</a>
+      <a href="#street" data-route="street"><svg aria-hidden="true"><use href="#icon-cube"/></svg>线下平台</a>
+      <a href="#residents" data-route="residents"><svg aria-hidden="true"><use href="#icon-people"/></svg>居民区</a>
+      <a href="#products" data-route="products"><svg aria-hidden="true"><use href="#icon-box"/></svg>产品区</a>
+      <p class="nav-group">实验工具</p>
+      <a href="#world" data-route="world"><svg aria-hidden="true"><use href="#icon-world"/></svg>世界概览</a>
+      <a href="#experiments" data-route="experiments"><svg aria-hidden="true"><use href="#icon-flask"/></svg>实验管理</a>
+      <a href="#audience" data-route="audience"><svg aria-hidden="true"><use href="#icon-people"/></svg>居民与人群</a>
+      <a href="#calibration" data-route="calibration" aria-label="真实结果校准"><svg aria-hidden="true"><use href="#icon-crosshair"/></svg>试点校准</a>
     </nav>
     <div class="sidebar-footer">
       <div class="engine-status"><span class="engine-icon"><svg><use href="#icon-activity"/></svg></span><div><strong>本地模拟引擎</strong><small id="engine-version">Counterfolk</small></div></div>
@@ -54,14 +60,51 @@
 
   <div class="workspace">
     <header class="topbar">
-      <div class="breadcrumb"><span>工作区</span><span aria-hidden="true">/</span><strong id="breadcrumb-title">世界概览</strong></div>
-      <div class="top-actions">
+      <div class="breadcrumb"><span>工作区</span><span aria-hidden="true">/</span><strong id="breadcrumb-title">电商平台</strong></div>
+      <div class="top-actions" id="market-world-tools" hidden>
+        <output id="market-world-day" class="market-day">正在载入</output>
+        <button class="button button-muted" type="button" data-world-days="1" disabled><svg aria-hidden="true"><use href="#icon-play"/></svg>推进一天</button>
+        <button class="button button-primary" type="button" data-open-product disabled><svg aria-hidden="true"><use href="#icon-plus"/></svg>上传商品</button>
+      </div>
+      <div class="top-actions" id="classic-tools">
         <button id="export" type="button" class="button button-muted" disabled><svg><use href="#icon-download"/></svg><span>导出结果</span></button>
         <button type="button" class="button button-primary" data-open-settings><svg><use href="#icon-play"/></svg>配置实验</button>
       </div>
     </header>
 
     <main>
+      <section id="view-commerce" data-view="commerce" aria-labelledby="commerce-title" hidden>
+        <div class="page-heading commerce-heading"><div><h1 id="commerce-title">电商平台</h1><p>同一批居民在不同货架搜索、比较和购买。</p></div>
+          <span class="commerce-pill"><i aria-hidden="true"></i><span>模拟市场</span></span>
+        </div>
+        <div id="commerce-workspace" aria-busy="true"><p class="commerce-empty">正在打开商品目录和购物车…</p></div>
+      </section>
+
+      <section id="view-residents" data-view="residents" aria-labelledby="residents-title" hidden>
+        <div class="page-heading commerce-heading"><div><h1 id="residents-title">居民区</h1><p>查看 100 位常驻居民的日常活动、购物路径和历史。</p></div>
+          <div class="commerce-actions"><button class="button button-muted" type="button" id="auto-world" aria-pressed="false" disabled>自动推进</button><button class="button button-muted" type="button" data-world-days="7" disabled>推进七天</button></div>
+        </div>
+        <div class="commerce-metrics" id="resident-metrics"></div>
+        <div class="commerce-split">
+          <article class="panel commerce-directory" aria-labelledby="directory-title">
+            <div class="panel-header"><div><h2 id="directory-title">居民名录</h2><p id="resident-count">等待世界载入</p></div></div>
+            <div class="commerce-filters"><label class="sr-only" for="resident-search">搜索居民</label><input id="resident-search" type="search" placeholder="姓名、身份编号或职业">
+              <label class="sr-only" for="resident-market-filter">筛选市场</label><select id="resident-market-filter"><option value="all">全部市场</option></select></div>
+            <div class="resident-directory" id="resident-directory"></div>
+          </article>
+          <article class="panel commerce-detail" id="resident-detail" aria-label="居民行为详情"><p class="commerce-empty">选择一位居民。</p></article>
+        </div>
+      </section>
+
+      <section id="view-products" data-view="products" aria-labelledby="products-title" hidden>
+        <div class="page-heading commerce-heading"><div><h1 id="products-title">产品区</h1><p>管理货架商品、营销素材和模拟订单。</p></div><button type="button" class="button button-primary" data-open-product disabled><svg aria-hidden="true"><use href="#icon-plus"/></svg>上传并上架</button></div>
+        <p id="product-publish-note" class="commerce-notice" role="status" hidden></p>
+        <div class="commerce-split commerce-product-split">
+          <article class="panel commerce-directory"><div class="panel-header"><div><h2>商品目录</h2><p id="catalog-count">等待商品目录载入</p></div></div><div id="product-directory" class="product-directory"></div></article>
+          <article class="panel commerce-detail" id="product-detail" aria-label="商品表现与素材"><p class="commerce-empty">选择商品查看表现。</p></article>
+        </div>
+      </section>
+
       <section id="view-world" data-view="world" aria-labelledby="world-title">
         <div class="page-heading">
           <div><h1 id="world-title">世界概览</h1><p>观察居民如何发现、比较并选择你的产品。</p></div>
@@ -107,7 +150,7 @@
 
       <section id="view-street" data-view="street" aria-labelledby="street-title" hidden>
         <div class="page-heading">
-          <div><h1 id="street-title">街区漫游</h1><p>沿着模拟居民的足迹，查看一次商品实验。</p></div>
+          <div><h1 id="street-title">线下平台</h1><p>进入实验街区，回放实体门店的居民行为。</p></div>
         </div>
         <article class="panel street-panel">
           <div class="panel-header street-header">
@@ -232,6 +275,37 @@
     </main>
   </div>
 
+  <dialog id="product-upload" class="product-dialog" aria-labelledby="product-upload-title">
+    <form id="product-upload-form">
+      <div class="settings-title"><div><h2 id="product-upload-title">上传并上架商品</h2><p>图片用于生成 A+ 图和约 15 秒的竖版短视频。</p></div><button type="button" class="icon-button" id="close-product" aria-label="关闭上传"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+      <div class="settings-body">
+        <div class="fields">
+          <label class="wide">商品名称<input name="name" required maxlength="120" placeholder="例如 AirLoop Mini 空气监测器"></label>
+          <label>品牌<input name="brand" maxlength="100" placeholder="品牌或店铺名称"></label>
+          <label>类别<select name="category" required></select></label>
+          <label>价格（基准美元）<input name="price" type="number" min="0.01" max="1000000" step="0.01" placeholder="69.00" required></label>
+          <label>每平台库存<input name="stock" type="number" min="1" max="100000" step="1" value="48" required></label>
+          <label class="wide">商品图<input name="image" type="file" accept="image/png,image/jpeg,image/webp" required></label>
+          <label class="wide">商品说明<textarea name="description" maxlength="2400" rows="3" placeholder="写明实物用途、规格或兼容条件" required></textarea></label>
+          <label class="wide">可核实的卖点（每行一项）<textarea name="features" maxlength="1610" rows="3" placeholder="例如温湿度显示"></textarea></label>
+          <label class="wide">目标受众<input name="audience" maxlength="240" placeholder="例如居家办公用户"></label>
+        </div>
+        <fieldset><legend>上架平台</legend><div class="checks" id="product-platform-fields"></div></fieldset>
+        <details class="product-model"><summary>AI 素材设置</summary>
+          <div class="fields">
+            <label>生成方式<select name="creativeMode"><option value="template">本地模板</option><option value="ai">用 AI 生成</option></select></label>
+            <label>提供商<select name="provider"><option value="ollama">Ollama</option><option value="openai">OpenAI</option><option value="compatible">OpenAI 兼容</option></select></label>
+            <label>模型 ID<input name="model" maxlength="120" placeholder="填写已配置的模型 ID"></label>
+            <label>本地地址<input name="baseUrl" type="url" placeholder="http://127.0.0.1:11434"></label>
+            <label class="wide">API Key<input name="apiKey" type="password" autocomplete="off" placeholder="可留空使用本机环境变量"></label>
+          </div>
+          <div class="commerce-actions"><button class="button button-muted" id="product-model-test" type="button">测试连接</button><span id="product-model-status" class="form-message"></span></div>
+          <p>模型读取填写的文字，原图在浏览器内渲染。</p>
+        </details>
+      </div>
+      <div class="settings-footer"><p id="product-upload-status" class="form-message" role="status"></p><button class="button button-muted" id="cancel-product" type="button">取消</button><button class="button button-primary" type="submit" id="submit-product">生成并上架</button></div>
+    </form>
+  </dialog>
   <dialog id="settings" class="settings-dialog" aria-labelledby="settings-title">
     <form id="settings-form">
       <div class="settings-title"><div><h2 id="settings-title">配置实验</h2><p>为同一批合成居民设置两个备选方案。</p></div><button type="button" class="icon-button" id="close-settings" aria-label="关闭设置"><svg><use href="#icon-close"/></svg></button></div>
@@ -240,7 +314,7 @@
           <label class="wide">实验名称<input name="name" required maxlength="100"></label>
           <label>产品类型<select name="product"><option value="hardware">硬件</option><option value="app">App</option></select></label>
           <label>转化指标<select name="metric"></select></label>
-          <label>居民数量<input name="population" type="number" min="1000" max="100000" step="1" required></label>
+          <label>居民数量<input name="population" type="number" min="100" max="100000" step="1" required></label>
           <label>观察天数<input name="days" type="number" min="1" max="90" required step="1"></label>
           <label>随机种子<input name="seed" type="number" min="0" max="4294967295" required step="1"></label>
           <label>转化目标 (%)<input name="target" type="number" min="0" max="100" step="any" required></label>

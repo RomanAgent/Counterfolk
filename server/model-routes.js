@@ -1,8 +1,12 @@
-import { LOOPBACK_NAMES, MODEL_PROVIDERS, ModelError, runModelInference, testModelProfile } from './model-providers.js';
+import { generateMarketingAssets, LOOPBACK_NAMES, MODEL_PROVIDERS, ModelError, runModelInference, testModelProfile } from './model-providers.js';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const MODELS = '/api/models';
-const ACTIONS = new Set([`${MODELS}/test`, `${MODELS}/run`]);
+const ACTIONS = new Map([
+  [`${MODELS}/test`, (body, options) => testModelProfile(body?.profile, options)],
+  [`${MODELS}/run`, runModelInference],
+  [`${MODELS}/marketing`, generateMarketingAssets],
+]);
 const LOOPBACK_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
 function sendJson(response, status, body) {
@@ -88,7 +92,8 @@ export function createModelRoutes({ fetchImpl = globalThis.fetch, env = process.
       sendJson(response, 200, { available: true, providers: MODEL_PROVIDERS });
       return true;
     }
-    if (!ACTIONS.has(path)) {
+    const action = ACTIONS.get(path);
+    if (!action) {
       sendJson(response, 404, { error: { code: 'not_found', message: '模型接口不存在。' } });
       return true;
     }
@@ -112,8 +117,7 @@ export function createModelRoutes({ fetchImpl = globalThis.fetch, env = process.
     try {
       const body = await readJson(request);
       const options = { fetchImpl, env, signal: controller.signal };
-      const result = path.endsWith('/test') ? await testModelProfile(body?.profile, options)
-        : await runModelInference(body, options);
+      const result = await action(body, options);
       sendJson(response, 200, result);
     } catch (error) {
       if (error instanceof ModelError) {

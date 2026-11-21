@@ -11,6 +11,7 @@ const mime = {
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.png': 'image/png',
 };
 const port = Number(process.env.COUNTERFOLK_PORT || '4177');
 

@@ -27,7 +27,7 @@ function checkFunnel(stats, product) {
 
 test('runs 100,000 paired residents and reconciles every aggregation', () => {
   const progress = [];
-  const result = simulate({ days: 90, variants: { b: { channel: 'retail' } } }, { onProgress: value => progress.push(value) });
+  const result = simulate({ population: 100_000, days: 90, variants: { b: { channel: 'retail' } } }, { onProgress: value => progress.push(value) });
   assert.equal(result.config.population, 100_000);
   assert.equal(result.daily.length, 90);
   for (const arm of ['a', 'b']) {

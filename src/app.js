@@ -6,10 +6,14 @@ import { CSV_COLUMNS, exampleCalibrationCsv, parseCalibrationCsv } from './calib
 import { createTrendChart, createWorldMap } from './visuals.js';
 import { createStreetView } from './street-view.js';
 import { createExperimentTools } from './experiment-tools.js';
+import { createCommerceWorkspace } from './commerce-workspace.js';
 
 const get = (id) => document.getElementById(id);
 const arms = ['a', 'b'];
-const names = { world: '世界概览', street: '街区漫游', experiments: '实验管理', audience: '居民与人群', calibration: '真实结果校准' };
+const names = {
+  commerce: '电商平台', street: '线下平台', residents: '居民区', products: '产品区',
+  world: '世界概览', experiments: '实验管理', audience: '居民与人群', calibration: '真实结果校准',
+};
 const stages = { unexposed: '未曝光', exposed: '已曝光', considered: '已考虑', purchase: '已购买', install: '已安装', activation: '已激活', paid: '已付费' };
 const targetLabels = { met: '达到阈值', below: '低于目标', uncertain: '结果接近阈值', 'no-data': '暂无曝光' };
 const integer = new Intl.NumberFormat('zh-CN');
@@ -42,6 +46,7 @@ const streetView = createStreetView({
   }),
   onNotify: toast,
 });
+const commerceWorkspace = createCommerceWorkspace({ notify: toast, escapeHtml });
 const experimentTools = createExperimentTools({
   runPrediction, download: downloadJson, escapeHtml, lookup, count, rate, points, message,
 });
@@ -107,7 +112,7 @@ function persist() {
 
 function route() {
   const hash = location.hash.slice(1);
-  const current = Object.hasOwn(names, hash) ? hash : 'world';
+  const current = Object.hasOwn(names, hash) ? hash : 'commerce';
   for (const view of document.querySelectorAll('[data-view]')) view.hidden = view.dataset.view !== current;
   for (const link of document.querySelectorAll('[data-route]')) {
     if (link.dataset.route === current) link.setAttribute('aria-current', 'page');
@@ -115,6 +120,7 @@ function route() {
   }
   get('breadcrumb-title').textContent = names[current];
   document.title = `${names[current]} · Counterfolk`;
+  commerceWorkspace.show(current);
   streetView.show(current === 'street', selectedRegion);
   window.scrollTo(0, 0);
 }
@@ -489,6 +495,7 @@ window.addEventListener('hashchange', route);
 
 initializeSettings();
 route();
+commerceWorkspace.init();
 try {
   if (saved.calibration?.csv) {
     calibration = fitCsv(saved.calibration.csv, Boolean(saved.calibration.example));
