@@ -1,63 +1,65 @@
-# Counterfolk · 众生镜
+# Counterfolk
 
-**一个可以先试卖，再用真实结果校准的开源社会模拟世界。**
+**English** · [简体中文](README.zh-CN.md)
 
-Counterfolk 取自 *counterfactual*（反事实：如果换个方案会怎样）和 *folk*（人群）。它让产品团队在发布前比较两种方案，观察不同买家如何接触商品、作出选择，再用真人试点结果检验这些模拟。
+**An open-source market simulator for testing products before launch and calibrating predictions with real-world pilots.**
 
-[已发布版本](https://romanagent.github.io/Counterfolk/) · [实施方案与路线图](docs/PLAN.md) · [电商工作区方案](docs/plans/2026-11-21-gitnexus-plan-living-commerce-workspace.md)
+Counterfolk takes its name from *counterfactual* and *folk*. Product teams can compare offers, see how different shoppers discover and choose products, and check the predictions against real-world results.
 
-## 本地启动
+[Live demo](https://romanagent.github.io/Counterfolk/) · [Project roadmap (Chinese)](docs/PLAN.md) · [Commerce workspace plan (Chinese)](docs/plans/2026-11-21-gitnexus-plan-living-commerce-workspace.md)
 
-需要 Node.js 20+，项目无须安装依赖。
+## Quick start
+
+Requires Node.js 20 or later. No dependency installation is needed.
 
 ```sh
 npm run dev
 ```
 
-在浏览器打开 [Counterfolk 本地控制台](http://127.0.0.1:4177)。页面启动后自动运行示例。可通过 `COUNTERFOLK_PORT` 选择本地端口。
+Open the [local Counterfolk console](http://127.0.0.1:4177). It runs a demo on startup. Set `COUNTERFOLK_PORT` to use a different local port.
 
 ```sh
 npm test
 npm run benchmark
 ```
 
-## 电商工作区
+## Commerce workspace
 
-- **环球货架和星选自营**提供两个原创电商原型，覆盖搜索、推荐、卖家与库存、商品素材、购物车和模拟结账。访客预览订单留在当前会话。线下入口可继续进入 3D 门店。
-- **居民区**有 100 位常驻合成居民，分布在 5 个市场。首次打开生成三天示例。点击居民可以看当天、某天及全部记录，从购物事件打开相应商品页。通过推进一天、七天或自动推进来产生新的模拟事件。自动推进在页面可见时运行。
-- **产品区**上传一张 PNG、JPEG 或 WebP 商品图（最多 8 MB），填写商品及选择市场后生成 3 张 A+ PNG、种草文案和约 15 秒的竖屏短视频。选择模型后可用 AI 生成文案和分镜。浏览器根据上传图渲染媒体。视频制作约花 15 秒，格式由浏览器支持的 MP4 或 WebM 决定。模型不可用时标记为本地模板。
-- **上架与测试**上架后商品可立即预览，从下一模拟日起进入两个选定平台的正常货架排序。产品区显示唯一曝光、浏览、加购、付款、退款和净收入，可按平台、入口和日期核对，并从事件跳回居民。曝光后转化使用唯一买家除以唯一曝光，总体转化使用唯一买家除以符合平台条件的居民。
-- **数据保存**常驻居民、逐日事件及商品媒体保存在该浏览器的 IndexedDB。AI 配置记住所选提供商、模型和地址，临时 API Key 随请求使用。常驻居民使用可复现的规则引擎，试买结果属于模拟。
+- **Marketplaces** include two original storefronts, Global Marketplace (`环球货架`) and Domestic Retail (`星选自营`). Browse recommendations, search the catalog, check seller and stock information, view product media, and complete a simulated checkout. Orders placed in visitor preview stay in the current session. The offline view opens a 3D storefront.
+- **Residents** contains 100 persistent synthetic residents across five markets. The first visit seeds three simulated days. Select a resident to view today's activity, a specific day, or their full history. Shopping events link to the corresponding product. Advance by one day, seven days, or use automatic advancement while the page is visible.
+- **Products** accepts a PNG, JPEG, or WebP image up to 8 MB, plus product details and marketplace selections. It creates three A+ listing images, social copy, and a roughly 15-second vertical video. A configured AI model writes the copy and storyboard, and the browser renders the media from the uploaded image. Video export takes about 15 seconds and uses MP4 or WebM, depending on browser support. When a model is unavailable, assets are labeled as locally generated templates.
+- **Listings and results** appear in preview immediately. Starting on the next simulated day, products enter the selected marketplaces' regular catalog ranking. The product dashboard shows unique residents reached, product views, cart additions, payments, refunds, and net revenue. Results can be reviewed by marketplace, discovery channel, and day. Events link back to residents. Post-exposure conversion divides unique buyers by unique residents reached. Overall conversion divides unique buyers by residents eligible for the selected marketplace or marketplaces.
+- **Storage** uses IndexedDB in the current browser for persistent residents, daily events, and product media. The app remembers the selected model provider, model, and endpoint. Temporary API keys are used for requests. Resident behavior and purchases are simulated by a reproducible rules engine.
 
-购买路径依据 [智能硬件消费者购买路径与渠道图谱](docs/SMART_HARDWARE_SALES_PATHS.md)。浏览器通过 [Canvas 媒体流](https://www.w3.org/TR/mediacapture-fromelement/) 和 [MediaRecorder](https://www.w3.org/TR/mediastream-recording/) 导出视频。
+Shopping journeys draw on the [smart hardware consumer journey and channel map (Chinese)](docs/SMART_HARDWARE_SALES_PATHS.md). The browser exports video with [Canvas media capture](https://www.w3.org/TR/mediacapture-fromelement/) and [MediaRecorder](https://www.w3.org/TR/mediastream-recording/).
 
-## 从模拟到真人试点
+## From simulation to real-world pilots
 
-1. **配置实验。** 选择硬件购买或 App 安装、激活、付费作为主事件，在独立 A/B 工具中配置 100 至 100,000 位合成居民、国家、语言、文化偏好和买家分群。两个方案可以分别设置价格、硬件电商运费、吸引力、本地化程度和投放渠道。
-2. **查看街区及漏斗。** 在「街区漫游」切换市场、方案和时间。点击「运行门店示例」体验到店、浏览和购买轨迹，亦可从居民菜单选取样本。Three.js 的街区、路径和分钟刻度用于回放。每个市场的日度计数和居民事件由 Worker 生成。
-3. **冻结预测。** 在「实验管理」填写素材版本与分流口径，选择分配分母或曝光分母。点击「锁定口径」后导出工作包，保存素材、规则引擎版本、随机种子与当时的聚合预测。可选运行 AI 并重新导出，保留独立的混合预测和模型决策记录。
-4. **对照小流量试点。** 在「真实结果校准」导出对应口径的试点 JSON 模板。填入真实 A/B 的分配、曝光和转化去重计数，再导入对照。报告检查指标、窗口、方案素材版本和渠道，显示两组转化差异、B − A、首个超出容差的阶段，以及可计算的真人区间。未拿到试点数据时可填入明确标注的合成示例。
-5. **校准未来预测。** 用独立一批历史试点导入 CSV，拟合分组偏移。用留出实验检查误差，再为下一轮锁定新的预测。真人试点结果用于判断是否扩大投放。
+1. **Configure an experiment.** In the separate A/B tool, choose a primary event such as hardware purchase, app install, activation, or payment. Configure 100 to 100,000 synthetic residents, along with markets, languages, cultural preferences, and shopper segments. Set the price, e-commerce shipping fee for hardware, product appeal, localization, and channel for each variant.
+2. **Explore the neighborhood and funnel.** In Offline Marketplace (`线下平台`), switch markets, variants, or time. Run the store demo (`运行门店示例`) to replay store visits, browsing, and purchases, or choose a resident from the sample. A browser worker generates the daily counts and resident events for each market. Three.js renders the neighborhood and animates the replay.
+3. **Freeze the prediction.** In Experiments (`实验管理`), enter the creative versions, assignment details, and whether conversion uses assigned or exposed users as the denominator. Lock the experiment definition (`锁定口径`) and export the workbench package to save the creative, rules engine version, seed, and aggregate prediction. If you run the AI-assisted experiment, export again to save the hybrid prediction and recorded model decisions.
+4. **Compare against a small pilot.** In Pilot Calibration (`试点校准`), export the matching pilot JSON template. Fill in deduplicated real A/B counts for assigned users, exposures, and conversions, then import the file. The report checks the metric, observation window, creative versions, and channels. It shows both conversion rates, the B − A difference, the first funnel stage outside tolerance, and a pilot interval when available. The workspace includes a labeled synthetic example.
+5. **Calibrate future predictions.** Import a separate set of historical pilots as CSV to fit adjustments by group. Evaluate them on held-out experiments before freezing the next prediction. Use the real pilot results to decide whether to expand the rollout.
 
-同一个工作包可在另一设备导入，核对当时的预测或重放已记录的 AI 决策。核心面板沿用曝光后转化率。真人对照默认按合格分配样本计算，适合分析会改变曝光的方案；曝光条件、非随机、门店或时段分流的汇总对照显示描述性差异。
+A workbench package can be opened on another device to review its frozen prediction or replay recorded AI decisions. The main dashboard reports post-exposure conversion. Real-pilot comparisons use eligible assigned users by default, which accounts for variants that change who gets exposed. Comparisons with exposure-based denominators, nonrandomized assignments, or assignment by store or time block report descriptive differences.
 
-## 配置本地或云端模型
+## Configure a local or cloud model
 
-在本机通过 `npm run dev` 打开「实验管理」。在「居民 AI 实验」选择提供商、模型、并发数和单次调用上限，再测试连接。
+Start the local server with `npm run dev`. Open Resident AI Experiments (`居民 AI 实验`) under Experiments (`实验管理`), choose a provider and model, set the number of parallel requests and the total request limit per run, and test the connection. The product upload form also has AI settings (`AI 素材设置`) for generating marketing assets.
 
-| 提供商 | 配置 |
+| Provider | Setup |
 | --- | --- |
-| Ollama | 启动本机 Ollama 并下载要使用的模型。默认地址为 `http://127.0.0.1:11434`，模型名称填写 Ollama 中显示的 ID。 |
-| OpenAI | 选择 OpenAI 并填写模型 ID。可以在页面临时输入 API Key，或启动服务前配置 `COUNTERFOLK_OPENAI_API_KEY` / `OPENAI_API_KEY`。 |
-| OpenAI 兼容 | 本机 API 填写兼容服务根地址，例如 `http://127.0.0.1:1234/v1`。用户可在服务器环境中指定一个 HTTPS 根地址 `COUNTERFOLK_COMPATIBLE_URL` 和可选密钥 `COUNTERFOLK_COMPATIBLE_API_KEY`。 |
+| Ollama | Start Ollama locally and download a model. The default endpoint is `http://127.0.0.1:11434`. Enter the model ID shown in Ollama. |
+| OpenAI | Select OpenAI and enter a model ID. Supply a temporary API key in the UI or set `COUNTERFOLK_OPENAI_API_KEY` or `OPENAI_API_KEY` before starting the server. |
+| OpenAI-compatible | Enter the base URL for a local compatible service, such as `http://127.0.0.1:1234/v1`. To use a specific remote HTTPS endpoint, set `COUNTERFOLK_COMPATIBLE_URL` and optionally `COUNTERFOLK_COMPATIBLE_API_KEY` on the server. |
 
-锁定两组商品文案后即可启动访谈。抽样访谈记录理解程度与理由。混合模式仅调整成功获得 A/B 配对回复的样本居民的考虑概率，缺失配对采用原规则。抽样覆盖、失败请求及阶段改变数量都会显示。模型独立读取每组资料，同样的 A/A 素材共用一次回复。
+Lock the product copy for both variants before starting an interview. Sampled interviews record what residents understood and why. Hybrid mode adjusts the probability of considering a product for sampled residents with a valid A/B response pair. Unpaired cases use the rules baseline. The dashboard shows sample coverage, failed requests, and how many residents changed funnel stages. The model receives each variant separately and reuses one assessment when the A/A materials are identical.
 
-本机服务只监听回环地址。模型调用会向所选服务发送锁定的商品资料和合成居民画像；临时凭据只用于请求，工作包不含密钥。公开演示支持规则实验、街区和已导入的试点对照，模型调用由本机服务提供。
+The local server listens on loopback. For resident experiments, requests send the locked product materials and synthetic resident profiles to the selected provider. Temporary credentials are used for the request and excluded from workbench exports. The public demo supports rules-based experiments, the 3D neighborhood, and imported pilot comparisons. Model calls use the local server.
 
-## CSV 口径
+## Calibration CSV format
 
-一行对应一个历史实验、方案与分组。「导出结果」提供每个方案与分组的 `exposed` 和 `converted`。页面内提供可运行且明确标注的合成示例。
+Each row represents a historical experiment, variant, and group. The results export provides `exposed` and `converted` counts for each variant and group. A labeled synthetic example is available in the UI.
 
 ```csv
 experimentId,variant,split,metric,days,channel,region,segment,simulatedExposed,simulatedConverted,realExposed,realConverted
@@ -65,16 +67,16 @@ pilot-01,a,train,purchase,14,ecommerce,all,all,7200,500,1280,72
 pilot-02,a,holdout,purchase,14,ecommerce,all,all,8100,560,1540,86
 ```
 
-- `variant` 填 `a` 或 `b`，`split` 填 `train` 或 `holdout`。同一个实验只能用于其中一种用途。
-- `metric` 取 `purchase`、`install`、`activation` 或 `paid`。渠道取 `ecommerce` 或 `retail`。地区、人群填导出结果里的 ID，汇总填 `all`。同一实验、方案与口径下的统计行须互斥，避免重复计数。
-- 汇总数据应与模拟场景的人群范围一致。口径包含事件、天数、渠道、国家与人群分组。用不同语言、文化偏好或人口构成的试点时，需要核对其可比性。
-- 校准按口径拟合正则化的对数几率偏移。留出误差按真实曝光数加权，在同一批可匹配行上计算校准前后误差。没有同口径训练参数时，显示原始结果。
+- Use `a` or `b` for `variant` and `train` or `holdout` for `split`. Assign each experiment to a single split.
+- Use `purchase`, `install`, `activation`, or `paid` for `metric` and `ecommerce` or `retail` for `channel`. Use the region and segment IDs from the results export or `all` for a combined group. Rows for the same experiment, variant, and measurement scope must be mutually exclusive.
+- Match the pilot population to the simulation by event, observation window, channel, country, and shopper segment. Check comparability if languages, cultural preferences, or population mixes differ.
+- Calibration fits a regularized log-odds shift per group. It compares error before and after calibration on the same matched holdout rows, weighted by real exposures. Groups without matching training data display the original results.
 
-## 模型与数据
+## A/B model and data
 
-- 每位居民由随机种子生成。文化偏好与国籍独立，预算、需求和渠道偏好来自合成先验。实验货币使用固定比例进行预算换算。
-- 每个方案记录观察期内的首次渠道接触和所达到的漏斗阶段。App 各阶段归到首次曝光日。趋势按首次曝光日形成独立队列。转化率为所选事件次数除以已曝光人数。
-- 浏览器 Worker 执行模拟。当前规则配置、最近十次规则实验与用于校准的 CSV 保存在当前浏览器。冻结的工作包、模型决策和真人对照材料通过导出保存。
-- 模拟区间反映模型内的抽样波动。预测适用性由同口径真人试点检验。目前世界以单次实验为范围。持续日程、可校准的出行和库存约束、社交网络与跨实验持久状态列在[路线图](docs/PLAN.md)中。
+- The simulation generates residents from a random seed. Cultural preferences are sampled independently of nationality. Budgets, needs, and channel preferences use synthetic priors, and experiment currencies use fixed conversion ratios.
+- Each variant records the first channel contact in the observation window and the furthest funnel stage reached. App stages are attributed to the day of first exposure, and each first-exposure day forms a separate trend cohort. Conversion divides selected events by exposed residents.
+- A browser worker runs the simulation. The current rules configuration, the last ten rules-based runs, and calibration CSV data are stored in the browser. Export workbench packages, model decisions, and pilot data to retain them separately.
+- Simulation intervals reflect sampling variation within the model. Real-world pilots test how well predictions transfer. Each A/B prediction covers a single experiment. The [roadmap (Chinese)](docs/PLAN.md) covers continuous schedules, calibratable travel and inventory constraints, social networks, and persistent state across experiments.
 
-地图采用 [Natural Earth 公有领域数据](https://www.naturalearthdata.com/about/terms-of-use/)。街区使用 [Three.js r187](vendor/three/README.md)。项目使用 [MIT 许可证](LICENSE)。
+The map uses [public-domain Natural Earth data](https://www.naturalearthdata.com/about/terms-of-use/). The 3D neighborhood uses [Three.js r187](vendor/three/README.md). Counterfolk is released under the [MIT License](LICENSE).
